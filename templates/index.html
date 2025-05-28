@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wave Warn – Heatwave Early-Warning</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Let script.js know where the API lives
+    const API_BASE = window.location.origin;
+  </script>
+</head>
+<body>
+  <h1>Wave Warn: Know First. Act Fast. Stay Safe.</h1>
+
+  <form id="forecast-form">
+    <label for="latitude">Latitude:</label>
+    <input type="text" id="latitude" placeholder="e.g., 28.7041°" required>
+    <label for="longitude">Longitude:</label>
+    <input type="text" id="longitude" placeholder="e.g., 77.1025°" required>
+    <button type="submit">Get Forecast</button>
+  </form>
+
+  <div id="chartContainer"><canvas id="mainChart"></canvas></div>
+  <div id="heatwaveInfo"></div>
+  <div id="summaryTableContainer"></div>
+
+  <div id="detailedChartContainer" style="display:none;">
+    <h2 id="detailedChartTitle"></h2>
+    <canvas id="detailedChart"></canvas>
+    <button id="closeDetailedChart">Close Chart</button>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
