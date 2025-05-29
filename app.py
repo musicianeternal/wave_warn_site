@@ -1,29 +1,20 @@
+import os
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
 
 from satellite_module.satellite_data import get_satellite_forecast
 from utils.summaries import generate_summaries
 
-app = Flask(
-    __name__,
-    static_folder="static",
-    static_url_path="/static",
-    template_folder="templates"
-)
+app = Flask(__name__)
 CORS(app)
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
-# Create the Limiter instance…
-limiter = Limiter(key_func=get_remote_address, default_limits=["100 per minute"])
-# …then bind it to your app
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["100 per minute"]
+)
 limiter.init_app(app)
-
-app.config["CACHE_TYPE"] = "simple"
-cache = Cache(app)
 
 @app.route("/")
 def index():
@@ -31,7 +22,6 @@ def index():
 
 @app.route("/forecast", methods=["POST"])
 @limiter.limit("10/second")
-@cache.cached(timeout=300, key_prefix=lambda: request.get_data())
 def forecast():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
@@ -43,19 +33,20 @@ def forecast():
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid or missing latitude/longitude"}), 400
 
+    result = get_satellite_forecast(lat, lon)
+    if not result.get("forecast"):
+        return jsonify({"error": "Forecast data not available"}), 500
+
     try:
-        payload = get_satellite_forecast(lat, lon)
-        weather = payload["weather"]
-        density = payload["cloud_density"]
-        summaries = generate_summaries(weather)
+        summaries = generate_summaries(result)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Summary error: {e}"}), 500
 
     return jsonify({
-        "satellite_density": density,
-        "forecast": weather,
+        "forecast": result["forecast"],
         "summaries": summaries
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=5002)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=True, host="0.0.0.0", port=port)
