@@ -14,7 +14,14 @@ app = Flask(
     template_folder="templates"
 )
 CORS(app)
-limiter = Limiter(app, key_func=get_remote_address, default_limits=["100 per minute"])
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Create the Limiter instance…
+limiter = Limiter(key_func=get_remote_address, default_limits=["100 per minute"])
+# …then bind it to your app
+limiter.init_app(app)
+
 app.config["CACHE_TYPE"] = "simple"
 cache = Cache(app)
 
